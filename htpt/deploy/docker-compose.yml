@@ -1,0 +1,43 @@
+# Chạy: docker compose -f deploy/docker-compose.yml --env-file .env up --build
+x-peer: &peer
+  build: { context: .., dockerfile: deploy/Dockerfile }
+  env_file: ../.env
+  depends_on: [tracker]
+  networks: [p2pnet]
+
+services:
+  tracker:
+    build: { context: .., dockerfile: deploy/Dockerfile }
+    command: uvicorn tracker.app:app --host 0.0.0.0 --port 8000
+    env_file: ../.env
+    ports: ["8000:8000"]
+    networks: [p2pnet]
+
+  peer1:   # seeder
+    <<: *peer
+    environment: { PEER_ID: peer-1, PEER_HOST: peer1, PEER_PORT: "9000", DATA_DIR: /data }
+    volumes: ["../sample:/sample:ro", "peer1-data:/data"]
+    command: python -m peer.main seed /sample/test.bin
+
+  peer2:
+    <<: *peer
+    environment: { PEER_ID: peer-2, PEER_HOST: peer2, PEER_PORT: "9000", DATA_DIR: /data }
+    volumes: ["peer2-data:/data"]
+    command: python -m peer.main serve
+
+  peer3:
+    <<: *peer
+    environment: { PEER_ID: peer-3, PEER_HOST: peer3, PEER_PORT: "9000", DATA_DIR: /data }
+    volumes: ["peer3-data:/data"]
+    command: python -m peer.main serve
+
+  peer4:
+    <<: *peer
+    environment: { PEER_ID: peer-4, PEER_HOST: peer4, PEER_PORT: "9000", DATA_DIR: /data }
+    volumes: ["peer4-data:/data"]
+    command: python -m peer.main serve
+
+networks:
+  p2pnet: {}
+
+volumes: { peer1-data: {}, peer2-data: {}, peer3-data: {}, peer4-data: {} }
