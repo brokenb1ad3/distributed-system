@@ -20,6 +20,11 @@ def get_logger(node: str, logfile: str | None = None) -> logging.Logger:
     if log.handlers:
         return log
     log.setLevel(logging.INFO)
+    log.propagate = False
+    try:  # Windows: tránh lỗi mã hóa khi in tiếng Việt
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     handlers = [logging.StreamHandler(sys.stdout)]
     if logfile:
         handlers.append(logging.FileHandler(logfile, encoding="utf-8"))
