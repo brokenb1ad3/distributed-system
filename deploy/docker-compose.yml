@@ -1,43 +1,68 @@
-# Chạy: docker compose -f deploy/docker-compose.yml --env-file .env up --build
+# Chạy (đứng ở thư mục chứa README.md):
+#   python scripts/make_sample.py 20
+#   docker compose -f deploy/docker-compose.yml --env-file .env up --build
+#
+# peer1 chia sẻ sample/test.bin. peer2, peer3, peer4 tự tải file khi khởi động rồi tiếp tục seed:
+#   FILE_ID=<id> trong .env (hoặc biến môi trường)  -> tải đúng file đó
+#   FILE_ID để trống                                  -> hỏi tracker và tải file đầu tiên có trên đó
 x-peer: &peer
   build: { context: .., dockerfile: deploy/Dockerfile }
-  env_file: ../.env
   depends_on: [tracker]
   networks: [p2pnet]
+
+x-peer-env: &peer-env
+  TRACKER_URL: http://tracker:8000
+  TRACKER_TOKEN: ${TRACKER_TOKEN:?hay dat TRACKER_TOKEN trong .env}
+  BIND_HOST: 0.0.0.0
+  PEER_PORT: "9000"
+  DATA_DIR: /data
+  ANNOUNCE_INTERVAL: "2"
+  UPLOAD_DELAY: "0.1"
+
+x-leecher-env: &leecher-env
+  <<: *peer-env
+  FILE_ID: ${FILE_ID:-}
 
 services:
   tracker:
     build: { context: .., dockerfile: deploy/Dockerfile }
-    command: uvicorn tracker.app:app --host 0.0.0.0 --port 8000
-    env_file: ../.env
+    command: python -m tracker.server
+    environment:
+      TRACKER_TOKEN: ${TRACKER_TOKEN:?hay dat TRACKER_TOKEN trong .env}
+      TRACKER_HOST: 0.0.0.0
+      TRACKER_PORT: "8000"
+      PEER_TTL: "10"
+      ANNOUNCE_INTERVAL: "2"
+      TRACKER_DB: /data/tracker_db.json
+    volumes: ["tracker-data:/data"]
     ports: ["8000:8000"]
     networks: [p2pnet]
 
-  peer1:   # seeder
+  peer1:   # seeder ban đầu
     <<: *peer
-    environment: { PEER_ID: peer-1, PEER_HOST: peer1, PEER_PORT: "9000", DATA_DIR: /data }
+    environment: { <<: *peer-env, PEER_ID: peer-1, PEER_HOST: peer1 }
     volumes: ["../sample:/sample:ro", "peer1-data:/data"]
     command: python -m peer.main seed /sample/test.bin
 
   peer2:
     <<: *peer
-    environment: { PEER_ID: peer-2, PEER_HOST: peer2, PEER_PORT: "9000", DATA_DIR: /data }
+    environment: { <<: *leecher-env, PEER_ID: peer-2, PEER_HOST: peer2 }
     volumes: ["peer2-data:/data"]
-    command: python -m peer.main serve
+    command: python /app/peer_entry.py
 
   peer3:
     <<: *peer
-    environment: { PEER_ID: peer-3, PEER_HOST: peer3, PEER_PORT: "9000", DATA_DIR: /data }
+    environment: { <<: *leecher-env, PEER_ID: peer-3, PEER_HOST: peer3 }
     volumes: ["peer3-data:/data"]
-    command: python -m peer.main serve
+    command: python /app/peer_entry.py
 
   peer4:
     <<: *peer
-    environment: { PEER_ID: peer-4, PEER_HOST: peer4, PEER_PORT: "9000", DATA_DIR: /data }
+    environment: { <<: *leecher-env, PEER_ID: peer-4, PEER_HOST: peer4 }
     volumes: ["peer4-data:/data"]
-    command: python -m peer.main serve
+    command: python /app/peer_entry.py
 
 networks:
   p2pnet: {}
 
-volumes: { peer1-data: {}, peer2-data: {}, peer3-data: {}, peer4-data: {} }
+volumes: { tracker-data: {}, peer1-data: {}, peer2-data: {}, peer3-data: {}, peer4-data: {} }

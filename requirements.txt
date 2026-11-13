@@ -1,5 +1,2 @@
-fastapi>=0.110
-uvicorn>=0.29
-httpx>=0.27
-pydantic>=2.6
+# Code chạy chỉ dùng thư viện chuẩn của Python (>= 3.10). pytest chỉ cần để chạy test.
 pytest>=8.0

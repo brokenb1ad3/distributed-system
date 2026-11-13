@@ -4,5 +4,8 @@ __pycache__/
 .venv/
 data/
 sample/
+demo_run/
 *.log
 .pytest_cache/
+.vscode/
+docs/COURSE_PROJECT_SPECIFICATION.pdf
