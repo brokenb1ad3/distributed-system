@@ -164,9 +164,9 @@ Danh sách đầy đủ: [tests/TEST_PLAN.md](tests/TEST_PLAN.md).
 
 | Thành viên | MSSV | Phụ trách | File chính |
 |---|---|---|---|
-| Đặng Gia Bảo | B23DCCN069 | Tracker, phát hiện peer, xác thực, triển khai | `src/tracker/`, `src/peer/tracker_client.py`, `src/common/config.py`, `deploy/`, `tests/test_security.py` |
-| Vũ Thế Anh | B23DCDT021 | Metadata, giao thức, lưu trữ, resume, upload | `src/common/metadata.py`, `protocol.py`, `log.py`, `src/peer/storage.py`, `uploader.py`, `tests/test_functional.py` |
-| Nguyễn Duy Khánh | B23DCVT226 | Tải song song, chịu lỗi, demo, hiệu năng | `src/peer/downloader.py`, `main.py`, `scripts/demo.py`, `tests/test_concurrency.py`, `test_fault.py` |
+| A: ... | ... | Tracker, phát hiện peer, xác thực, triển khai | `src/tracker/`, `src/peer/tracker_client.py`, `src/common/config.py`, `deploy/`, `tests/test_security.py` |
+| B: ... | ... | Metadata, giao thức, lưu trữ, resume, upload | `src/common/metadata.py`, `protocol.py`, `log.py`, `src/peer/storage.py`, `uploader.py`, `tests/test_functional.py` |
+| C: ... | ... | Tải song song, chịu lỗi, demo, hiệu năng | `src/peer/downloader.py`, `main.py`, `scripts/demo.py`, `tests/test_concurrency.py`, `test_fault.py` |
 
 ## Hạn chế và hướng phát triển
 
