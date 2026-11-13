@@ -170,4 +170,4 @@ Danh sách đầy đủ: [tests/TEST_PLAN.md](tests/TEST_PLAN.md).
 
 ## Hạn chế và hướng phát triển
 
-Tracker là điểm lỗi đơn (chưa có bản sao); chưa có DHT, magnet link, choking/tit-for-tat, TLS
+Tracker là điểm lỗi đơn (chưa có bản sao); chưa có DHT, magnet link, choking/tit-for-tat, TLS.
