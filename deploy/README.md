@@ -7,7 +7,7 @@ Có hai cách triển khai:
 | Cách | Khi nào dùng | Công cụ |
 |---|---|---|
 | Nhiều tiến trình trên **một máy** | Demo, chạy thử, kiểm thử | `scripts/start_demo.ps1` (Windows) hoặc chạy tay theo README gốc |
-| Mỗi node trên **một máy riêng trong LAN** | Thể hiện hệ thống chạy trên nhiều máy thật | `deploy/run_node.ps1` (Windows), `deploy/run_node.sh` (Linux/macOS) |
+| Mỗi node trên **một máy riêng trong LAN** | Thể hiện hệ thống chạy trên nhiều máy thật | `deploy/run_node.ps1` |
 
 ## 1. Một máy
 
@@ -42,11 +42,10 @@ peer (mở hai cửa sổ).
    powershell -ExecutionPolicy Bypass -File deploy\run_node.ps1 -Role firewall
    ```
 
-   Lệnh này thêm quy tắc "P2P DS02" cho cổng TCP 8000 và 9001–9010. Linux: mở các cổng tương ứng nếu có tường lửa
-   (ví dụ `sudo ufw allow 8000,9001:9010/tcp`).
+   Lệnh này thêm quy tắc "P2P DS02" cho cổng TCP 8000 và 9001–9010.
 
-Script tự dò IP LAN của máy. Nếu máy có nhiều card mạng và dò sai, xem IP bằng `ipconfig` (Windows) hoặc `ip addr`
-(Linux) rồi truyền vào `-Ip <địa chỉ>` (hoặc biến `IP=<địa chỉ>` với script `.sh`).
+Script tự dò IP LAN của máy. Nếu máy có nhiều card mạng và dò sai, xem IP bằng `ipconfig` rồi truyền vào
+`-Ip <địa chỉ>`.
 
 ### Bước 2: máy A chạy tracker
 
@@ -74,14 +73,8 @@ powershell -ExecutionPolicy Bypass -File deploy\run_node.ps1 -Role get -TrackerI
 Mỗi peer phải có `-PeerId` khác nhau. Tải xong, peer tiếp tục làm seeder cho các máy khác. File tải về nằm ở
 `data/<PEER_ID>/downloads/`.
 
-Linux/macOS dùng `deploy/run_node.sh` với cùng các bước:
-
-```bash
-./deploy/run_node.sh tracker                                         # máy A
-./deploy/run_node.sh seed 192.168.1.10 peer-1 9001 sample/test.bin   # máy B
-./deploy/run_node.sh get  192.168.1.10 peer-2 9001 <FILE_ID>         # máy C
-./deploy/run_node.sh list 192.168.1.10                               # xem các file tracker đang quản lý
-```
+Máy không dùng Windows: chạy tay như mục "Chạy thủ công" trong README gốc, đặt thêm các biến
+`PEER_HOST=<IP máy này>`, `BIND_HOST=0.0.0.0` và `TRACKER_URL=http://<IP máy A>:8000`.
 
 ### Tham số của `run_node.ps1`
 

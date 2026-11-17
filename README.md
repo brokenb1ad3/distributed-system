@@ -124,7 +124,7 @@ hệt khi tự gõ lệnh ở từng cửa sổ.
 ## Triển khai trên nhiều máy (LAN)
 
 Mỗi node có thể chạy trên một máy riêng trong cùng mạng: máy A chạy tracker, các máy khác chạy peer.
-`deploy/run_node.ps1` (Windows) và `deploy/run_node.sh` (Linux/macOS) tự dò IP LAN và đặt các biến môi trường cần thiết:
+`deploy/run_node.ps1` tự dò IP LAN và đặt các biến môi trường cần thiết:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File deploy\run_node.ps1 -Role tracker                                                        # máy A
