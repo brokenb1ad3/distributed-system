@@ -35,7 +35,7 @@ Chi tiết giao thức, mô hình nhất quán và cơ chế chịu lỗi: [docs
 
 - Python 3.10 trở lên. Code chạy **chỉ dùng thư viện chuẩn**, không cần cài gói nào.
 - `pytest` để chạy test: `pip install -r requirements.txt`
-- Docker (không bắt buộc) nếu muốn chạy mỗi node một container.
+- Windows Terminal (có sẵn trên Windows 11) để dùng `scripts/start_demo.ps1`; không có thì script mở các cửa sổ PowerShell riêng.
 
 ## Chạy nhanh: demo tự động
 
@@ -72,60 +72,68 @@ $env:PEER_ID="peer-3"; $env:PEER_PORT="9003"; python -m peer.main get <FILE_ID>
 
 Linux/macOS: thay bằng `PEER_ID=peer-1 PEER_PORT=9001 python -m peer.main seed ../sample/test.bin`.
 
-File tải về nằm ở `data/<PEER_ID>/downloads/`. Chạy trên nhiều máy trong LAN: đặt `TRACKER_URL` trỏ tới máy chạy tracker
-và `PEER_HOST` là IP LAN của từng máy.
+File tải về nằm ở `data/<PEER_ID>/downloads/`. Chạy trên nhiều máy trong LAN: xem [deploy/README.md](deploy/README.md).
 
-## Chạy bằng Docker
+## Demo nhanh bằng `scripts/start_demo.ps1` (Windows)
 
-Mỗi node là một container trên mạng `p2pnet`: `tracker`, `peer1` (seeder của `sample/test.bin`) và
-`peer2`, `peer3`, `peer4` (tự tải file khi khởi động, vừa tải vừa upload cho nhau, tải xong thì tiếp tục seed).
+Script mở sẵn một cửa sổ Windows Terminal chia 6 ô, mỗi ô là một node chạy như một tiến trình riêng:
 
-```bash
-cp .env.example .env                  # rồi đổi TRACKER_TOKEN
-python scripts/make_sample.py 20      # tạo sample/test.bin (20 MB)
-docker compose -f deploy/docker-compose.yml --env-file .env up --build
+```
+| tracker  | peer-1 (seeder) | peer-3 (leecher) |
+| công cụ  | peer-2 (seeder) | peer-4 (leecher) |
 ```
 
-Chọn file để tải bằng biến `FILE_ID` (đặt trong `.env` hoặc biến môi trường khi gọi `docker compose`):
+Mỗi ô đã đặt sẵn `PEER_ID`, `PEER_PORT`, `UPLOAD_DELAY` và hiện sẵn lệnh của node đó. Trước khi mở, script tự tắt các
+tiến trình python còn chiếm cổng 8000, 9001–9007, xóa dữ liệu cũ trong `data/`, tạo `.env` nếu chưa có, tạo file mẫu
+và tính sẵn `FILE_ID`.
 
-| `FILE_ID` | peer2, peer3, peer4 làm gì |
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_demo.ps1
+```
+
+Tùy chọn: `-SizeMB 20` (kích thước file mẫu, mặc định 40), `-Delay 0.5` (trễ upload mỗi chunk, mặc định 1 giây),
+`-Keep` (giữ dữ liệu của lần chạy trước). Đợi khoảng 10 giây cho tới khi dựng xong 6 ô, không bấm vào cửa sổ trong lúc này.
+
+Thứ tự thao tác:
+
+1. Ô **tracker** → Enter.
+2. Ô **peer-1** → Enter: tạo metadata và chia sẻ file.
+3. Ô **peer-2** → Enter: seeder thứ hai.
+4. Ô **peer-3**, ngay sau đó ô **peer-4** → Enter: hai peer cùng tải song song từ nhiều nguồn và chia chunk cho nhau.
+5. Khi đang tải dở, ở ô **công cụ** gõ `kill1`: tắt đột ngột peer-1, các peer tự chuyển nguồn, tracker báo
+   `PEER_EXPIRED` sau khoảng 10 giây.
+6. Khi peer-3, peer-4 hiện `DOWNLOAD_COMPLETE`, gõ `hash`: SHA-256 của file tải về trùng với file gốc.
+7. Gõ `evil`, bấm vào ô peer-5 vừa hiện ra và nhấn Enter; quay lại ô công cụ gõ `get6`: chunk sai bị loại
+   (`CHUNK_REJECTED`).
+8. (Tùy chọn) Gõ `get7`, bấm Ctrl+C giữa chừng rồi gõ `get7` lần nữa: tải tiếp từ chỗ dừng (`RESUME`).
+
+| Lệnh trong ô công cụ | Tác dụng |
 |---|---|
-| để trống (mặc định) | hỏi tracker và tải file đầu tiên có trên đó |
-| `<16 ký tự hex>` | tải đúng file đó; `FILE_ID` là giá trị peer1 in ra ở dòng `FILE_ID=...` |
+| `peers` | Xem tracker đang biết những peer nào, mỗi peer có bao nhiêu chunk |
+| `kill1` | Tắt đột ngột peer-1 |
+| `killport N` | Tắt đột ngột tiến trình trên cổng N (9001–9007) |
+| `hash` | So SHA-256 file gốc với các file đã tải về |
+| `evil` | Mở thêm ô peer-5 độc hại (luôn gửi chunk sai, chỉ dùng để demo) |
+| `get6` | peer-6 tải file ngay trong ô công cụ |
+| `get7` | peer-7 tải file, dùng để thử resume |
 
-Cả hai trường hợp, peer chờ tối đa `FILE_WAIT_SECONDS` (mặc định 120) cho tới khi tracker có file, vì các container
-khởi động cùng lúc. Phần này do `deploy/peer_entry.py` xử lý rồi gọi `python -m peer.main get <FILE_ID>`.
+Ô nào chạy sai thì bấm vào ô đó, Ctrl+C rồi gõ `go` để chạy lại. Đóng cửa sổ Windows Terminal để tắt toàn bộ.
+Script chỉ mở sẵn các node cho tiện; mỗi ô vẫn là một tiến trình Python độc lập, giao tiếp qua HTTP và TCP, giống
+hệt khi tự gõ lệnh ở từng cửa sổ.
 
-Kiểm tra kết quả (mở terminal khác; `DC` là viết tắt của `docker compose -f deploy/docker-compose.yml --env-file .env`):
+## Triển khai trên nhiều máy (LAN)
 
-```bash
-DC logs | grep -E "FILE_VERIFIED|DOWNLOAD_COMPLETE"     # PowerShell: DC logs | Select-String "FILE_VERIFIED|DOWNLOAD_COMPLETE"
-DC exec peer2 python -m peer.main list                  # các file tracker đang quản lý
-DC exec peer2 sha256sum /data/downloads/test.bin        # so với sha256 của sample/test.bin trên máy
+Mỗi node có thể chạy trên một máy riêng trong cùng mạng: máy A chạy tracker, các máy khác chạy peer.
+`deploy/run_node.ps1` (Windows) và `deploy/run_node.sh` (Linux/macOS) tự dò IP LAN và đặt các biến môi trường cần thiết:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\run_node.ps1 -Role tracker                                                        # máy A
+powershell -ExecutionPolicy Bypass -File deploy\run_node.ps1 -Role seed -TrackerIp <IP máy A> -PeerId peer-1 -File sample\test.bin  # máy B
+powershell -ExecutionPolicy Bypass -File deploy\run_node.ps1 -Role get  -TrackerIp <IP máy A> -PeerId peer-2 -FileId <FILE_ID>      # máy C
 ```
 
-Log mẫu của một lần chạy (file 20 MB, 80 chunk). `sources[...]` cho thấy mỗi peer lấy chunk từ cả seeder lẫn hai peer
-đang tải dở:
-
-```
-peer-3 | FILE_VERIFIED     | file=e785284ba9a58d29 sha256=e8c5d9a24ba5e4bd… khớp metadata
-peer-3 | DOWNLOAD_COMPLETE | ... time=3.773s sources[peer-1=55 peer-2=12 peer-4=13] retries=0 rejected=0
-peer-2 | DOWNLOAD_COMPLETE | ... time=3.88s  sources[peer-1=56 peer-3=7 peer-4=17] retries=0 rejected=0
-peer-4 | DOWNLOAD_COMPLETE | ... time=4.394s sources[peer-1=65 peer-2=8 peer-3=7] retries=0 rejected=0
-```
-
-Gây lỗi và phục hồi:
-
-```bash
-DC kill -s SIGKILL peer1      # tắt đột ngột seeder khi đang tải (hoặc ./scripts/fault_kill_peer.sh peer1)
-                              # -> SOURCE_FAILED, CHUNK_RETRY ở các peer; PEER_EXPIRED ở tracker sau 10s
-DC up -d peer1                # bật lại seeder -> các peer tải nốt chunk còn thiếu, FILE_VERIFIED
-DC restart peer3              # khởi động lại peer -> đọc lại /data: RESUME hoặc ALREADY_COMPLETE
-DC down -v                    # dừng và xóa dữ liệu để chạy lại từ đầu
-```
-
-Nếu tắt peer1 khi nó là nguồn duy nhất của một số chunk thì các peer còn lại dừng ở mức đã tải được và chờ;
-chúng chỉ hoàn tất khi peer1 (hoặc một peer có đủ chunk) quay lại trong `STALL_TIMEOUT` (60s).
+Mọi máy dùng chung `TRACKER_TOKEN` trong `.env` và cần mở cổng trên tường lửa. Hướng dẫn đầy đủ (chuẩn bị, tường lửa,
+gây lỗi, xử lý sự cố): [deploy/README.md](deploy/README.md).
 
 ## Kiểm thử
 
