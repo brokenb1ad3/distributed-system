@@ -121,6 +121,42 @@ Thứ tự thao tác:
 Script chỉ mở sẵn các node cho tiện; mỗi ô vẫn là một tiến trình Python độc lập, giao tiếp qua HTTP và TCP, giống
 hệt khi tự gõ lệnh ở từng cửa sổ.
 
+## Demo bằng bảng điều khiển web (`scripts/dashboard.py`)
+
+Toàn bộ thao tác demo làm trên một trang web chạy trên máy cục bộ: bật/tắt từng node bằng nút bấm, xem log của
+từng node, bản đồ chunk của từng peer và kiểm tra hash.
+
+```powershell
+python scripts\dashboard.py
+```
+
+Trình duyệt tự mở `http://localhost:8080`. Khi khởi động, script dọn dữ liệu của lần chạy trước, tạo `.env` nếu chưa
+có, tạo file mẫu 40 MB (160 chunk) và tính sẵn `FILE_ID`. Mỗi nút "Bật" khởi động một tiến trình Python độc lập bằng
+đúng lệnh như khi chạy thủ công (`python -m tracker.server`, `python -m peer.main seed ...`,
+`python -m peer.main get <FILE_ID>`); nút "Tắt đột ngột" kết thúc hẳn tiến trình, không cho nó kịp báo tracker.
+Các node vẫn chỉ giao tiếp với nhau qua HTTP và TCP; trang web không tham gia truyền chunk.
+
+Trang gồm: hàng nút điều khiển; bảng peer và bản đồ chunk (đọc từ API `GET /files`, `GET /files/{file_id}/peers` của
+tracker) kèm hàng "Độ phổ biến"; cột sự kiện (vào mạng, tải xong, rời mạng, hết lease); tám khung log, mỗi khung chứa
+toàn bộ log của một tiến trình, có tô màu và tùy chọn "Chỉ hiện dòng quan trọng".
+
+| Nút | Tác dụng |
+|---|---|
+| ↺ Dọn sạch, làm lại | Tắt mọi node, xóa dữ liệu và log, đưa về trạng thái ban đầu |
+| 1 · Bật tracker | Khởi động tracker |
+| 2 · Bật peer-1 (seed) | Seeder gốc tạo metadata và chia sẻ file |
+| 3 · Bật peer-2 (seed) | Seeder thứ hai, cùng `FILE_ID` |
+| 4 · Bật peer-3 + peer-4 | Hai leecher tải đồng thời và trao đổi chunk cho nhau |
+| 5 · Tắt đột ngột peer-1 | Nguồn chết khi đang tải: `SOURCE_FAILED`, `CHUNK_RETRY` ở leecher, `PEER_EXPIRED` ở tracker |
+| 6 · Kiểm tra hash | So SHA-256 file gốc với các file đã tải về |
+| 7 · Bật peer-5 độc hại | Peer luôn gửi chunk hỏng (chỉ dùng để demo) |
+| 8 · Bật peer-6 | Leecher tải khi có peer độc hại: `CHUNK_REJECTED` |
+| 9 · Bật peer-7 | Tắt đột ngột rồi bật lại để thử tải tiếp (`RESUME`) |
+
+Tùy chọn: `--size-mb` (kích thước file mẫu, mặc định 40), `--delay` (trễ upload mỗi chunk, mặc định 1 giây),
+`--port` (cổng của trang, mặc định 8080), `--no-browser`. Nhấn Ctrl+C ở cửa sổ chạy script để tắt toàn bộ node.
+Log của các node nằm ở `demo_run/web_logs/`.
+
 ## Triển khai trên nhiều máy (LAN)
 
 Mỗi node có thể chạy trên một máy riêng trong cùng mạng: máy A chạy tracker, các máy khác chạy peer.

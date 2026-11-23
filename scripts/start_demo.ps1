@@ -239,7 +239,7 @@ if (Get-Command wt.exe -ErrorAction SilentlyContinue) {
     function Invoke-Wt([string[]]$wtArgs) { wt.exe -w $win @wtArgs; Start-Sleep -Milliseconds 900 }
     Invoke-Wt (@("new-tab") + (Get-PaneArgs "tracker" "tracker"))
     Start-Sleep -Milliseconds 600
-    Invoke-Wt (@("split-pane", "-H", "-s", "0.4") + (Get-PaneArgs "tools" "công cụ"))
+    Invoke-Wt (@("split-pane", "-H", "-s", "0.5") + (Get-PaneArgs "tools" "công cụ"))
     Invoke-Wt (@("split-pane", "-V", "-s", "0.66") + (Get-PaneArgs "peer2" "peer-2 (seeder)"))
     Invoke-Wt (@("split-pane", "-V", "-s", "0.5") + (Get-PaneArgs "peer4" "peer-4 (leecher)"))
     Invoke-Wt @("move-focus", "up")
